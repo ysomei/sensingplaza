@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 require "net/http"
+require "openssl"
 require "uri"
 require "cgi"
 
 module Sensingplaza
   class WebRequest
-    attr_accessor :user_id, :user_password, :url
+    attr_accessor :user_id, :user_password, :url, :logger
 
     # requesthost - String  ex) "http://hoge.com"
     # logger - Logger
