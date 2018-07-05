@@ -212,6 +212,9 @@ module Sensingplaza
       return result      
     end
 
+    # ------------------------------------------------------------------------
+    # sensorkey - String(s)  ex) "" or ["", "", ...]
+    # sdatetime, edatetime -String  ex) "2018-07-05 12:00:00"
     def get_period_image(sensorkey, sdatetime, edatetime)
       return nil if @mailaddress.nil?
       return nil unless datetime_format?(sdatetime)
@@ -265,6 +268,7 @@ module Sensingplaza
     end
 
     # ------------------------------------------------------------------------
+    # sensorkey - String(s)  ex) "" or ["", "", ...]
     def get_sensor_information(sensorkey)
       skeys = skey_forming(sensorkey)
       return nil if skeys.empty?
