@@ -138,7 +138,7 @@ module Sensingplaza
     # sensorkey - String(s)
     # sdatetme, edatetime - String  ex) "2018-07-04 12:12:00"
     #    getting data from sdatetime to edatetime
-    def get_data_period(sensorkey, sdatetime, edatetime)
+    def get_period_data(sensorkey, sdatetime, edatetime)
       return nil if @mailaddress.nil?
       return nil unless datetime_format?(sdatetime)
       return nil unless datetime_format?(edatetime)
@@ -193,6 +193,58 @@ module Sensingplaza
       return result      
     end
 
+    def get_period_image(sensorkey, sdatetime, edatetime)
+      return nil if @mailaddress.nil?
+      return nil unless datetime_format?(sdatetime)
+      return nil unless datetime_format?(edatetime)
+
+      skeys = skey_forming(sensorkey)
+      return nil if skeys.empty?
+
+      result = Array.new
+      datas = bulkdown(skeys, sdatetime, edatetime)
+      datas.each do |dat|
+        dt = dat["datetime"]
+        rehash = Hash.new
+        rehash["datetime"] = dt
+        dat["data"].each do |k, v|
+          unless v.nil?
+            imgdat = Base64.strict_decode64(v)
+            imgtype, mimetype = check_image_format(imgdat[0, 4]) # first 4bytes
+            fname = "#{dt.gsub(/[\-\s\:]/, "")}.#{imgtype}"
+            rehash[k] = { "blob" => imgdat,
+                          "filename" => fname, "content-type" => mimetype }
+          else
+            rehash[k] = nil
+          end
+        end
+        result.push(rehash)
+      end
+      return result
+    end
+    
+    # ------------------------------------------------------------------------
+    # sensorkey -String(s)  ex) "12abe9de" or ["12abe9de", "433bedd2", ...]
+    # data - image data(binary)
+    # datetime - String  ex) "2018-07-04 12:34:00" or nil -> now time
+    def push_image(sensorkey, data, datetime = nil)
+      return nil if @mailaddress.nil?
+      datetime = Time.now.to_s[0, 19] if datetime.nil?
+      return nil unless datetime_format?(datetime)
+
+      skeys = skey_forming(sensorkey)
+      return nil if skeys.empty?
+      datas = data_forming(data)
+      return nil if datas.empty?
+
+      imgs = Array.new
+      datas.each do |dat|
+        imgs.push(Base64.strict_encode64(dat))        
+      end
+      result = upload(skeys, datetime, imgs)
+      return result
+    end
+    
     
   end
 end
