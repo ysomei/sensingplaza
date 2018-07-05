@@ -54,14 +54,18 @@ module Sensingplaza
       return datas
     end
     
-    def download(skeys, datetime)
+    def download(skeys, datetime, max_datetime = nil)
       endpoint = "/api/download"
       req = { "mailaddress" => @mailaddress,
               "datetime" => datetime,
+              "max_datetime" => max_datetime,
               "data" => skeys
             }
       jsonstr = @webreq.post(req, endpoint)
       response = JSON.parse(jsonstr)
+      if datetime.nil?
+        return response
+      end
       return response["data"]
     end
     def upload(skeys, datetime, datas)
@@ -150,6 +154,21 @@ module Sensingplaza
       return result      
     end
 
+    # ------------------------------------------------------------------------
+    # sensorkey - String(s)  ex) "" or ["", "", ...]
+    def get_last_data(sensorkey, isFromAllData = false)
+      return nil if @mailaddress.nil?
+      
+      skeys = skey_forming(sensorkey)
+      return nil if skeys.empty?
+
+      datetime = nil
+      max_datetime = Time.now.to_s[0, 19]
+      max_datetime = nil if isFromAllData
+      result = download(skeys, datetime, max_datetime)
+      return result      
+    end
+    
     # ------------------------------------------------------------------------
     # sensorkey - String(s)  ex) "" or ["", "", ...]
     # data - value(s)  ex) 12.45 or [12.45, "on", ...]
@@ -244,7 +263,20 @@ module Sensingplaza
       result = upload(skeys, datetime, imgs)
       return result
     end
-    
+
+    # ------------------------------------------------------------------------
+    def get_sensor_information(sensorkey)
+      skeys = skey_forming(sensorkey)
+      return nil if skeys.empty?
+
+      endpoint = "/api/sensor_info"
+      req = { "mailaddress" => @mailaddress,
+              "data" => skeys
+            }
+      jsonstr = @webreq.post(req, endpoint)
+      response = JSON.parse(jsonstr)
+      return response["data"]      
+    end
     
   end
 end
