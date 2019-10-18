@@ -53,6 +53,9 @@ module Sensingplaza
       end
       return datas
     end
+    def bulkdata_forming(bulkdata)
+      # nop
+    end
     
     def download(skeys, datetime, max_datetime = nil)
       endpoint = "/api/download"
@@ -86,7 +89,7 @@ module Sensingplaza
 
     def bulkdown(skeys, sdatetime, edatetime)
       result = Hash.new
-      endpoint = "/api/bulkdown"
+      endpoint = "/api/bulkdown2"
       req = { "mailaddress" => @mailaddress,
               "start_datetime" => sdatetime,
               "end_datetime" => edatetime,
@@ -96,7 +99,20 @@ module Sensingplaza
       response = JSON.parse(jsonstr)
       return response["sheaf"]
     end
+    def bulkupload(skeys, bulkdata)
+      sensvals = Hash.new
+      skey = skeys[0]
+      sensvals[skey] = bulkdata
 
+      endpoint = "/api/bulkups"
+      req = { "mailaddress" => @mailaddress,
+              "sheaf" => sensvals
+            }
+      jsonstr = @webreq.post(req, endpoint)
+      response = JSON.parse(jsonstr)
+      return response["sheaf"]
+    end
+    
     # img_header -> first 4bytes of data :p 
     def check_image_format(img_header)
       hstr = img_header.unpack("H*").first
@@ -142,6 +158,7 @@ module Sensingplaza
     # sensorkey - String(s)
     # sdatetme, edatetime - String  ex) "2018-07-04 12:12:00"
     #    getting data from sdatetime to edatetime
+    # result: { :skey => [[:datetime, value], ...], [:datetime, value], ...] }
     def get_period_data(sensorkey, sdatetime, edatetime)
       return nil if @mailaddress.nil?
       return nil unless datetime_format?(sdatetime)
@@ -280,6 +297,18 @@ module Sensingplaza
       jsonstr = @webreq.post(req, endpoint)
       response = JSON.parse(jsonstr)
       return response["data"]      
+    end
+
+    # ------------------------------------------------------------------------
+    # sensorkey - String ex) "ssssssss"
+    # bulkdata - Array ex) [[:datetime, value], [:datetime, value], ...]
+    def push_bulkdata(sensorkey, bulkdata)
+      return nil if @mailaddress.nil?
+      skeys = skey_forming(sensorkey)
+      return nil if skeys.empty?
+
+      result = bulkupload(skeys, bulkdata)
+      return result
     end
     
   end
